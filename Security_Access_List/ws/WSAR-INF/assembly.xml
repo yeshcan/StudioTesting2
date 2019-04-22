@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+     xmlns="http://www.springframework.org/schema/beans"
+     xmlns:beans="http://www.springframework.org/schema/beans"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:cc="http://www.capeclear.com/assembly/10"
+     xmlns:cloud="urn:com.workday/esb/cloud/10.0"
+     xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"
+     xmlns:pi="urn:com.workday/picof"
+     xmlns:wd="urn:com.workday/bsvc"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ 
+	<cc:assembly id="WorkdayAssembly" version="2019.6">
+        <cc:workday-in id="StartHere" routes-to="AsyncMediation">
+            <cc:integration-system name="Security_Access_List">
+        <cloud:param name="Security Groups">
+          <cloud:type>
+            <cloud:class-report-field description="Security Group" type="WID" singular="false">97da76626b43463c9c08bee70fac0913</cloud:class-report-field>
+          </cloud:type>
+        </cloud:param>
+        <cloud:param name="Domain Security Policy">
+          <cloud:type>
+            <cloud:class-report-field description="Security Policy" type="WID" singular="false">ce3deb12876b40d690e796acb9aa6a89</cloud:class-report-field>
+          </cloud:type>
+        </cloud:param>
+        <cloud:param name="Functional Areas">
+          <cloud:type>
+            <cloud:class-report-field description="Functional Areas" type="WID" singular="false">fb2346495b57100003294e502ed309fc</cloud:class-report-field>
+          </cloud:type>
+        </cloud:param>
+        <cloud:report-service name="Security_Access_List_RS">
+          <cloud:report-alias description="RPT - Security_Access_Security_Group" name="Security_Access_Security_Group">
+            <cloud:report-reference description="RPT - Security_Access_Security_Group" type="WID">9928c6d37b7901952ba08f6844220b43</cloud:report-reference>
+          </cloud:report-alias>
+          <cloud:report-alias description="RPT - Security_Access_Domain" name="Security_Access_Domain">
+            <cloud:report-reference description="RPT - Security_Access_Domain" type="WID">9928c6d37b79010008eca1ec4322e042</cloud:report-reference>
+          </cloud:report-alias>
+        </cloud:report-service>
+      </cc:integration-system>
+        </cc:workday-in>
+        <cc:async-mediation id="AsyncMediation" routes-to="CallSecurityGroups">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['secGroup_view'] = new java.util.HashMap()</cc:expression>
+                    <cc:expression>props['secGroup_modify'] = new java.util.HashMap()</cc:expression>
+                    <cc:expression>props['secGroup_get'] = new java.util.HashMap()</cc:expression>
+                    <cc:expression>props['secGroup_put'] = new java.util.HashMap()</cc:expression>
+                    <cc:expression>props['Header'] = new java.lang.StringBuffer()</cc:expression>
+                    <cc:expression>props['SecGroup_list'] = new java.util.ArrayList()</cc:expression>
+                    <cc:expression>props['output'] = new java.lang.StringBuffer()</cc:expression>
+                </cc:eval>
+                <cc:eval id="Eval0">
+                    <cc:expression>props['domain'] = lp.getReferenceDataList('Domain Security Policy', 'WID')</cc:expression>
+                    <cc:expression>props['securityGroup'] = lp.getReferenceDataList('Security Groups', 'WID')</cc:expression>
+                    <cc:expression>props['functional'] = lp.getReferenceDataList('Functional Areas', 'WID')</cc:expression>
+                    <cc:expression>props['domainWID'] = util.listToDelimString(props['domain'], '!')</cc:expression>
+                    <cc:expression>props['securityGroupWID'] = util.listToDelimString(props['securityGroup'], '!')</cc:expression>
+                    <cc:expression>props['functionalWID'] = util.listToDelimString(props['functional'], '!')</cc:expression>
+                </cc:eval>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>===============Launch Parameter====================&#xD;
+&#xD;
+Domain:&#xD;
+@{props['domainWID']}&#xD;
+&#xD;
+Security Group:&#xD;
+@{props['securityGroupWID']}&#xD;
+&#xD;
+Functional:&#xD;
+@{props['functionalWID']}&#xD;
+&#xD;
+================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:local-out id="CallSecurityGroups" store-message="none" routes-response-to="AsyncMediation4" endpoint="vm://Security_Access_List/SecurityGroups"/>
+        <cc:local-in id="SecurityGroups" routes-to="AsyncMediation0"/>
+        <cc:async-mediation id="AsyncMediation0" routes-to="WorkdayOutRest">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>if(props['securityGroupWID'] == null){&#xD;
+props['R1_Path'] = intsys.reportService.getExtrapath('Security_Access_Security_Group');&#xD;
+}else if(props['securityGroupWID'] != null){&#xD;
+props['R1_Path'] = intsys.reportService.getExtrapath('Security_Access_Security_Group') + &quot;?Security_Group!WID=&quot; + props['securityGroupWID'];&#xD;
+}</cc:expression>
+                    <cc:expression>props['Header'] = &quot;Functional Area, Domain, Security Content,&quot;</cc:expression>
+                </cc:eval>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>===============Security Group Report Path=======================&#xD;
+&#xD;
+@{props['R1_Path']}&#xD;
+&#xD;
+========================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:workday-out-rest id="WorkdayOutRest" routes-response-to="AsyncMediation1" extra-path="@{props['R1_Path']}"/>
+        <cc:async-mediation id="AsyncMediation1" routes-to="AsyncMediation2">
+            <cc:steps>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>=========================Security Group======================&#xD;
+</cc:text>
+                        <cc:message-content/>
+                        <cc:text>============================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation2" routes-to="Splitter">
+            <cc:steps>
+                <cc:xslt id="Xslt" url="SecurityGroupConversion.xsl"/>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>=============Security Group Conversion====================</cc:text>
+                        <cc:message-content/>
+                        <cc:text>==================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:splitter id="Splitter">
+            <cc:sub-route name="SubRoute" routes-to="AsyncMediation3"/>
+            <cc:xpath-splitter xpath="root/row"/>
+        </cc:splitter>
+        <cc:async-mediation id="AsyncMediation3">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['SecGroup_list'].add(parts[0].xpath(&quot;.&quot;))</cc:expression>
+                    <cc:expression>props['SC'] = parts[0].xpath(&quot;.&quot;)</cc:expression>
+                </cc:eval>
+                <cc:eval id="Eval0">
+                    <cc:expression>props['Header'] = props['Header'] + props['SC'] + &quot;,,&quot;</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation4" routes-to="CallSecurityAccess">
+            <cc:steps>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>====================Security Group Complete================&#xD;
+&#xD;
+Header&#xD;
+@{props['Header']}&#xD;
+&#xD;
+Security Group List:&#xD;
+@{props['SecGroup_list'].toString()}&#xD;
+=======================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:local-out id="CallSecurityAccess" store-message="none" endpoint="vm://Security_Access_List/SecurityAccess"/>
+        <cc:local-in id="SecurityAccess" routes-to="AsyncMediation5"/>
+        <cc:async-mediation id="AsyncMediation5" routes-to="WorkdayOutRest0">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>if(props['domainWID'] == null &amp;&amp; props['functionalWID'] == null){&#xD;
+props['R2_Path'] = intsys.reportService.getExtrapath('Security_Access_Domain');&#xD;
+}else if(props['domainWID'] == null &amp;&amp; props['functionalWID'] != null){&#xD;
+props['R2_Path'] = intsys.reportService.getExtrapath('Security_Access_Domain')+&quot;?Functional_Areas!WID=&quot;+props['functionalWID'];&#xD;
+}else if(props['domainWID'] != null &amp;&amp; props['functionalWID'] == null){&#xD;
+props['R2_Path'] = intsys.reportService.getExtrapath('Security_Access_Domain')+&quot;?Domain_Security_Policy!WID=&quot;+props['domainWID'];&#xD;
+}else if(props['domainWID'] != null &amp;&amp; props['functionalWID'] != null){&#xD;
+props['R2_Path'] = intsys.reportService.getExtrapath('Security_Access_Domain')+&quot;?Domain_Security_Policy!WID=&quot;+props['domainWID']+&quot;&amp;Functional_Areas!WID=&quot;+props['functionalWID'];&#xD;
+}</cc:expression>
+                </cc:eval>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>==============Security Access Report Path===============&#xD;
+&#xD;
+@{props['R2_Path']}&#xD;
+&#xD;
+===============================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:workday-out-rest id="WorkdayOutRest0" routes-response-to="AsyncMediation10" extra-path="@{props['R2_Path']}"/>
+        <cc:async-mediation id="AsyncMediation10" routes-to="CallAccessHashmap">
+            <cc:steps>
+                <cc:copy id="Copy" output="variable" output-variable="Access_Var"/>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:local-out id="CallAccessHashmap" store-message="none" routes-response-to="CallAccessandGroupProcessing" endpoint="vm://Security_Access_List/AccessHashmap"/>
+        <cc:local-in id="AccessHashmap" routes-to="AsyncMediation6"/>
+        <cc:async-mediation id="AsyncMediation6" routes-to="Splitter0">
+            <cc:steps>
+                <cc:xslt id="Xslt" input="variable" input-variable="Access_Var" url="SecurityAccessConversion.xsl"/>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:splitter id="Splitter0">
+            <cc:sub-route name="SubRoute" routes-to="AsyncMediation7"/>
+            <cc:xpath-splitter xpath="root/row"/>
+        </cc:splitter>
+        <cc:async-mediation id="AsyncMediation7">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['SGD'] = parts[0].xpath(&quot;row/Domain&quot;)</cc:expression>
+                    <cc:expression>props['secGroup_view'].put(props['SGD'],parts[0].xpath(&quot;row/View&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_modify'].put(props['SGD'],parts[0].xpath(&quot;row/Modify&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_get'].put(props['SGD'],parts[0].xpath(&quot;row/Get&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_put'].put(props['SGD'],parts[0].xpath(&quot;row/Put&quot;))</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation8">
+            <cc:steps>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>=====================Security Access Hashmaps=======================&#xD;
+&#xD;
+View Hashmap:&#xD;
+@{props['secGroup_view']}&#xD;
+&#xD;
+Modify Hashmap:&#xD;
+@{props['secGroup_modify']}&#xD;
+&#xD;
+Put Hashmap:&#xD;
+@{props['secGroup_put']}&#xD;
+&#xD;
+Get Hashmap:&#xD;
+@{props['secGroup_get']}&#xD;
+&#xD;
+======================================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation9">
+            <cc:steps>
+                <cc:log id="Log">
+                    <cc:log-message>
+                        <cc:text>====================Security Access Conversion======================</cc:text>
+                        <cc:message-content/>
+                        <cc:text>==============================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+                <cc:log id="Log0">
+                    <cc:log-message>
+                        <cc:text>===============view and modify===============&#xD;
+&#xD;
+@{props['output']}&#xD;
+&#xD;
+=========================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+                <cc:log id="Log2">
+                    <cc:log-message>
+                        <cc:text>====================Loop Coversion=================&#xD;
+&#xD;
+Count: @{props['arrayList_Count']}&#xD;
+&#xD;
+Row: @{props['output']}&#xD;
+&#xD;
+=================================================</cc:text>
+                    </cc:log-message>
+                </cc:log></cc:steps>
+        </cc:async-mediation>
+        <cc:local-out id="CallAccessandGroupProcessing" store-message="none" endpoint="vm://Security_Access_List/AccessandGroupProcessing"/>
+        <cc:local-in id="AccessandGroupProcessing" routes-to="AsyncMediation11"/>
+        <cc:async-mediation id="AsyncMediation11" routes-to="Splitter1">
+            <cc:steps>
+                <cc:xslt id="Xslt" input="variable" input-variable="Access_Var" url="ConersionPrinting.xsl"/>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:splitter id="Splitter1">
+            <cc:sub-route name="SubRoute" routes-to="AsyncMediation12"/>
+            <cc:xpath-splitter xpath="root/row"/>
+        </cc:splitter>
+        <cc:async-mediation id="AsyncMediation12" routes-to="CallProcessing">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['Domain1'] = parts[0].xpath(&quot;row/Domain&quot;)</cc:expression>
+                    <cc:expression>props['Functional_Area1'] = parts[0].xpath(&quot;row/Functional_Areas&quot;)</cc:expression>
+                    <cc:expression>props['SC1'] = parts[0].xpath(&quot;row/Security_Content&quot;)</cc:expression>
+                    <cc:expression>props['arrayList_Count'] = props['SecGroup_list'].size()</cc:expression>
+                    <cc:expression>props['Domain'] = props['Domain1'].replace('&quot;', '')</cc:expression>
+                    <cc:expression>props['Functional_Area'] = props['Functional_Area1'].replace('&quot;', '')</cc:expression>
+                    <cc:expression>props['SC'] = props['SC1'].replace('&quot;', '')</cc:expression>
+                    <cc:expression>props['output'] = props['Functional_Area1'] + &quot;,&quot; + props['Domain1'] + &quot;,&quot; + props['SC1'] + &quot;,&quot;</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:route id="Route">
+            <cc:loop-strategy condition="props['loop_Count'] &lt; props['arrayList_Count']" increment="props['loop_Count'] = props['loop_Count'] + 1" init="props['loop_Count'] = 0"/>
+            <cc:sub-route name="Alternate" routes-to="AsyncMediation13"/>
+        </cc:route>
+        <cc:async-mediation id="AsyncMediation13" routes-to="AsyncMediation14">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props[&quot;Sec_Grp_Name&quot;] = props['SecGroup_list'].get(props['loop_Count'])</cc:expression>
+                    <cc:expression>props['View_Sec'] = props['secGroup_view'].get(props['Domain'])</cc:expression>
+                    <cc:expression>props['Modify_Sec'] = props['secGroup_modify'].get(props['Domain'])</cc:expression>
+                </cc:eval>
+                <cc:eval id="Eval0">
+                    <cc:expression>props['View_Sec'] = props['secGroup_view'].get(props['Domain'])</cc:expression>
+                    <cc:expression>props['Modify_Sec'] = props['secGroup_modify'].get(props['Domain'])</cc:expression>
+                    <cc:expression>props['Views'] = props['View_Sec'].contains(props[&quot;Sec_Grp_Name&quot;])</cc:expression>
+                    <cc:expression>props['Modifies'] = props['Modify_Sec'].contains(props[&quot;Sec_Grp_Name&quot;])</cc:expression>
+                    <cc:expression>if(props['Views'] == 'true' &amp;&amp; props['Modifies'] == 'true'){&#xD;
+props['output'] = props['output'] + 'View and Modify,';&#xD;
+}else if(props['Views'] == 'true' &amp;&amp; props['Modifies'] != 'true'){&#xD;
+props['output'] = props['output'] + 'View,';&#xD;
+}else if(props['Views'] != 'true' &amp;&amp; props['Modifies'] == 'true'){&#xD;
+props['output'] = props['output'] + 'Modify,';&#xD;
+}else{&#xD;
+props['output'] = props['output'] + 'N/A,';&#xD;
+}</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation14">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props[&quot;Sec_Grp_Name&quot;] = props['SecGroup_list'].get(props['loop_Count'])</cc:expression>
+                    <cc:expression>props['Get_Sec'] = props['secGroup_get'].get(props['Domain'])</cc:expression>
+                    <cc:expression>props['Put_Sec'] = props['secGroup_put'].get(props['Domain'])</cc:expression>
+                    <cc:expression>props['Gets'] = props['Get_Sec'].contains(props[&quot;Sec_Grp_Name&quot;])</cc:expression>
+                    <cc:expression>props['Puts'] = props['Put_Sec'].contains(props[&quot;Sec_Grp_Name&quot;])</cc:expression>
+                    <cc:expression>if(props['Gets'] == 'true' &amp;&amp; props['Puts'] == 'true'){&#xD;
+props['output'] = props['output'] + 'Get and Put,';&#xD;
+}else if(props['Gets'] == 'true' &amp;&amp; props['Puts'] != 'true'){&#xD;
+props['output'] = props['output'] + 'Get,';&#xD;
+}else if(props['Gets'] != 'true' &amp;&amp; props['Puts'] == 'true'){&#xD;
+props['output'] = props['output'] + 'Put,';&#xD;
+}else{&#xD;
+props['output'] = props['output'] + 'N/A,';&#xD;
+}</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:local-out id="CallProcessing" store-message="none" routes-response-to="AsyncMediation15" endpoint="vm://Security_Access_List/Processing"/>
+        <cc:local-in id="Processing" routes-to="Route"/>
+        <cc:async-mediation id="AsyncMediation15" routes-to="Aggregator">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['output'] = props['output'] + '\n' </cc:expression>
+                </cc:eval>
+                <cc:write id="Write">
+                    <cc:message>
+                        <cc:text>@{props['output']}</cc:text>
+                    </cc:message>
+                </cc:write>
+                <cc:log id="Log1">
+                    <cc:log-message>
+                        <cc:text>===============GET AND PUT===============&#xD;
+&#xD;
+@{props['output']}&#xD;
+&#xD;
+=========================================</cc:text>
+                    </cc:log-message>
+                </cc:log>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:aggregator id="Aggregator" routes-to="AsyncMediation16">
+            <cc:size-batch-strategy batch-size="-1"/>
+            <cc:message-content-collater/>
+        </cc:aggregator>
+        <cc:async-mediation id="AsyncMediation16">
+            <cc:steps>
+                <cc:write id="Write">
+                    <cc:message>
+                        <cc:text>@{props['Header']}&#xD;
+</cc:text>
+                        <cc:message-content/>
+                    </cc:message>
+                </cc:write>
+                <cc:store id="Store" expiresIn="P30D" title="Security_Access.csv"/>
+            </cc:steps>
+        </cc:async-mediation>
+	</cc:assembly>
+
+</beans>
