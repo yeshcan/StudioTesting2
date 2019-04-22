@@ -197,7 +197,7 @@ props['R2_Path'] = intsys.reportService.getExtrapath('Security_Access_Domain')+&
             <cc:sub-route name="SubRoute" routes-to="AsyncMediation7"/>
             <cc:xpath-splitter xpath="root/row"/>
         </cc:splitter>
-        <cc:async-mediation id="AsyncMediation7">
+        <cc:async-mediation id="AsyncMediation7" routes-to="AsyncMediation71">
             <cc:steps>
                 <cc:eval id="Eval">
                     <cc:expression>props['SGD'] = parts[0].xpath(&quot;row/Domain&quot;)</cc:expression>
@@ -371,6 +371,28 @@ props['output'] = props['output'] + 'N/A,';&#xD;
                     </cc:message>
                 </cc:write>
                 <cc:store id="Store" expiresIn="P30D" title="Security_Access.csv"/>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation70">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['SGD'] = parts[0].xpath(&quot;row/Domain&quot;)</cc:expression>
+                    <cc:expression>props['secGroup_view'].put(props['SGD'],parts[0].xpath(&quot;row/View&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_modify'].put(props['SGD'],parts[0].xpath(&quot;row/Modify&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_get'].put(props['SGD'],parts[0].xpath(&quot;row/Get&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_put'].put(props['SGD'],parts[0].xpath(&quot;row/Put&quot;))</cc:expression>
+                </cc:eval>
+            </cc:steps>
+        </cc:async-mediation>
+        <cc:async-mediation id="AsyncMediation71" routes-to="AsyncMediation70">
+            <cc:steps>
+                <cc:eval id="Eval">
+                    <cc:expression>props['SGD'] = parts[0].xpath(&quot;row/Domain&quot;)</cc:expression>
+                    <cc:expression>props['secGroup_view'].put(props['SGD'],parts[0].xpath(&quot;row/View&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_modify'].put(props['SGD'],parts[0].xpath(&quot;row/Modify&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_get'].put(props['SGD'],parts[0].xpath(&quot;row/Get&quot;))</cc:expression>
+                    <cc:expression>props['secGroup_put'].put(props['SGD'],parts[0].xpath(&quot;row/Put&quot;))</cc:expression>
+                </cc:eval>
             </cc:steps>
         </cc:async-mediation>
 	</cc:assembly>
